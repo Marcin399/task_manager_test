@@ -371,7 +371,6 @@ class TaskLocalDataSourceImpl implements TaskLocalDataSource {
       // This month's statistics
       final startOfMonth = DateTime(now.year, now.month, 1).millisecondsSinceEpoch;
       
-      // Get counts
       final totalTasks = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM tasks')) ?? 0;
       final completedTasks = Sqflite.firstIntValue(await db.rawQuery('SELECT COUNT(*) FROM tasks WHERE isCompleted = 1')) ?? 0;
       final pendingTasks = totalTasks - completedTasks;

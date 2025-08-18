@@ -18,7 +18,6 @@ class TaskEntity with _$TaskEntity {
   
   const TaskEntity._();
   
-  // Business logic methods
   bool get isOverdue => 
       !isCompleted && deadline.isBefore(DateTime.now());
   

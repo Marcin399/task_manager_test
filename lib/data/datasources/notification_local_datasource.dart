@@ -37,10 +37,8 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
     try {
       Logger.info('Inicjalizacja systemu powiadomień...', tag: 'Notifications');
       
-      // Android initialization
       const androidInitializationSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
       
-      // iOS initialization - don't request permissions during init
       const iosInitializationSettings = DarwinInitializationSettings(
         requestAlertPermission: false,
         requestBadgePermission: false,
@@ -61,7 +59,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
       
       Logger.info('Wtyczka powiadomień zainicjowana', tag: 'Notifications');
       
-      // Create notification channel for Android
       await _createNotificationChannel();
       
       Logger.info('Inicjalizacja systemu powiadomień zakończona', tag: 'Notifications');
@@ -72,8 +69,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
   }
   
   void _onNotificationTapped(NotificationResponse notificationResponse) {
-    // Handle notification tap - in a real app, this would navigate to the specific task
-    // For now, we'll just log the action
     Logger.info('Notification tapped: ${notificationResponse.payload}', tag: 'Notifications');
   }
   
@@ -96,7 +91,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
     try {
       Logger.info('Rozpoczynanie procesu żądania uprawnień...', tag: 'Notifications');
       
-      // Check if we're on iOS/macOS first
       final iosImpl = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       final macosImpl = _flutterLocalNotificationsPlugin
@@ -105,7 +99,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
       bool hasPermission = false;
       
       if (iosImpl != null) {
-        // For iOS, only use flutter_local_notifications
         Logger.debug('Żądanie uprawnień iOS...', tag: 'Notifications');
         final iosPermission = await iosImpl.requestPermissions(
           alert: true,
@@ -115,7 +108,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
         hasPermission = iosPermission ?? false;
         Logger.info('Uprawnienia iOS przyznane: $hasPermission', tag: 'Notifications');
       } else if (macosImpl != null) {
-        // For macOS, only use flutter_local_notifications
         Logger.debug('Żądanie uprawnień macOS...', tag: 'Notifications');
         final macosPermission = await macosImpl.requestPermissions(
           alert: true,
@@ -125,20 +117,17 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
         hasPermission = macosPermission ?? false;
         Logger.info('Uprawnienia macOS przyznane: $hasPermission', tag: 'Notifications');
       } else {
-        // For Android, use permission_handler
         Logger.debug('Żądanie uprawnień Android...', tag: 'Notifications');
         final status = await permission.Permission.notification.request();
         hasPermission = status.isGranted;
         Logger.info('Uprawnienia Android przyznane: $hasPermission', tag: 'Notifications');
       }
       
-      // Double-check by getting actual status
       final actualStatus = await _getActualPermissionStatus();
       final finalResult = hasPermission || actualStatus;
       
       Logger.info('Końcowy wynik uprawnień: $finalResult', tag: 'Notifications');
       
-      // Store permission status
       await _localStorage.setBool(AppConstants.keyNotificationEnabled, finalResult);
       
       return finalResult;
@@ -157,17 +146,14 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
     }
   }
   
-  // Helper method to get actual permission status across platforms
   Future<bool> _getActualPermissionStatus() async {
     try {
-      // For iOS/macOS, prioritize flutter_local_notifications over permission_handler
       final iosImpl = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       final macosImpl = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<MacOSFlutterLocalNotificationsPlugin>();
       
       if (iosImpl != null) {
-        // For iOS, only use flutter_local_notifications
         try {
           Logger.debug('Sprawdzanie uprawnień iOS...', tag: 'Notifications');
           final iosSettings = await iosImpl.checkPermissions();
@@ -182,7 +168,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
           return false;
         }
       } else if (macosImpl != null) {
-        // For macOS, only use flutter_local_notifications
         try {
           Logger.debug('Sprawdzanie uprawnień macOS...', tag: 'Notifications');
           final macosSettings = await macosImpl.checkPermissions();
@@ -196,7 +181,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
           return false;
         }
       } else {
-        // For Android and other platforms, use permission_handler
         Logger.debug('Sprawdzanie uprawnień Android...', tag: 'Notifications');
         final notificationStatus = await permission.Permission.notification.status;
         final hasPermission = notificationStatus.isGranted;
@@ -214,14 +198,12 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
     try {
       Logger.info('Otwieranie ustawień aplikacji...', tag: 'Notifications');
       
-      // Check if we're on iOS/macOS to use proper method
       final iosImpl = _flutterLocalNotificationsPlugin
           .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>();
       
       bool settingsOpened = false;
       
       if (iosImpl != null) {
-        // For iOS, try to request permissions again first (this might show settings prompt)
         Logger.debug('Ponowne żądanie uprawnień iOS (może otworzyć ustawienia)...', tag: 'Notifications');
         final permissionGranted = await iosImpl.requestPermissions(
           alert: true,
@@ -230,27 +212,22 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
         );
         
         if (permissionGranted != true) {
-          // If still denied, fallback to opening app settings
           settingsOpened = await permission.openAppSettings();
         } else {
           settingsOpened = true;
         }
       } else {
-        // For Android and other platforms
         settingsOpened = await permission.openAppSettings();
       }
       
       Logger.info('Ustawienia otwarte: $settingsOpened', tag: 'Notifications');
       
-      // After returning from settings, check if permissions are granted
       if (settingsOpened) {
-        // Longer delay to ensure system has time to update permissions
         await Future.delayed(const Duration(seconds: 2));
         final hasPermissions = await checkPermissions();
         
         Logger.info('Status uprawnień po powrocie z ustawień: $hasPermissions', tag: 'Notifications');
         
-        // Update stored permission status
         await _localStorage.setBool(AppConstants.keyNotificationEnabled, hasPermissions);
         
         return hasPermissions;
@@ -276,7 +253,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
       final reminderTime = task.reminderTime!;
       Logger.debug('Czas przypomnienia: $reminderTime', tag: 'Notifications');
       
-      // Don't schedule if reminder time is in the past
       if (reminderTime.isBefore(DateTime.now())) {
         Logger.warning('Czas przypomnienia jest w przeszłości', tag: 'Notifications');
         return;
@@ -368,10 +344,8 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
   @override
   Future<void> rescheduleAllReminders(List<TaskEntity> tasks) async {
     try {
-      // Cancel all existing reminders
       await cancelAllReminders();
       
-      // Schedule new reminders for all tasks that have them
       for (final task in tasks) {
         if (task.hasReminder && !task.isCompleted) {
           await scheduleTaskReminder(task);
@@ -425,7 +399,6 @@ class NotificationLocalDataSourceImpl implements NotificationLocalDataSource {
   }
   
   int _getNotificationId(String taskId) {
-    // Generate a consistent integer ID from task ID
-    return taskId.hashCode & 0x7FFFFFFF; // Ensure positive integer
+    return taskId.hashCode & 0x7FFFFFFF; 
   }
 }

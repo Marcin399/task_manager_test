@@ -9,7 +9,6 @@ class NotificationProvider extends ChangeNotifier {
   
   NotificationProvider(this._notificationUseCases);
   
-  // State variables
   bool _areNotificationsEnabled = false;
   bool _hasPermissions = false;
   int _defaultReminderTime = AppConstants.defaultReminderMinutes;
@@ -19,7 +18,6 @@ class NotificationProvider extends ChangeNotifier {
   String? _errorMessage;
   bool _isInitialized = false;
   
-  // Getters
   bool get areNotificationsEnabled => _areNotificationsEnabled;
   bool get hasPermissions => _hasPermissions;
   int get defaultReminderTime => _defaultReminderTime;
@@ -31,7 +29,6 @@ class NotificationProvider extends ChangeNotifier {
   bool get isInitialized => _isInitialized;
   int get pendingNotificationsCount => _pendingNotifications.length;
   
-  // Initialize
   Future<void> initialize() async {
     if (_isInitialized) return;
     
@@ -39,12 +36,10 @@ class NotificationProvider extends ChangeNotifier {
     _clearError();
     
     try {
-      // Initialize notification system
       final initResult = await _notificationUseCases.initializeNotifications();
       
       await initResult.when(
         success: (_) async {
-          // Load current settings
           await _loadSettings();
           _isInitialized = true;
         },
@@ -58,32 +53,27 @@ class NotificationProvider extends ChangeNotifier {
       _setLoading(false);
     }
   }
-  
-  // Load settings
+
   Future<void> _loadSettings() async {
     try {
-      // Check permissions
       final permissionResult = await _notificationUseCases.checkNotificationPermissions();
       permissionResult.when(
         success: (hasPermissions) => _hasPermissions = hasPermissions,
         failure: (_) => _hasPermissions = false,
       );
       
-      // Check if notifications are enabled
       final enabledResult = await _notificationUseCases.areNotificationsEnabled();
       enabledResult.when(
         success: (enabled) => _areNotificationsEnabled = enabled,
         failure: (_) => _areNotificationsEnabled = false,
       );
       
-      // Get default reminder time
       final reminderResult = await _notificationUseCases.getDefaultReminderTime();
       reminderResult.when(
         success: (time) => _defaultReminderTime = time,
         failure: (_) => _defaultReminderTime = AppConstants.defaultReminderMinutes,
       );
       
-      // Get pending notifications
       await _loadPendingNotifications();
       
       notifyListeners();
@@ -92,7 +82,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Load pending notifications
   Future<void> _loadPendingNotifications() async {
     try {
       final result = await _notificationUseCases.getPendingNotifications();
@@ -109,7 +98,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Request permissions
   Future<bool> requestPermissions() async {
     _setLoading(true);
     _clearError();
@@ -136,7 +124,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
 
-  // Open app settings for permissions
   Future<bool> openAppSettings() async {
     _setLoading(true);
     _clearError();
@@ -146,9 +133,7 @@ class NotificationProvider extends ChangeNotifier {
       
       return result.when(
         success: (opened) async {
-          // After returning from settings, refresh permission status
           if (opened) {
-            // Wait a bit more for the permission to be properly updated
             await Future.delayed(const Duration(milliseconds: 1500));
             await refresh();
           }
@@ -167,7 +152,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Enable notifications
   Future<void> enableNotifications() async {
     _setLoading(true);
     _clearError();
@@ -191,7 +175,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Disable notifications
   Future<void> disableNotifications() async {
     _setLoading(true);
     _clearError();
@@ -216,18 +199,15 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Toggle notifications
   Future<void> toggleNotifications() async {
     if (_areNotificationsEnabled) {
       await disableNotifications();
     } else {
-      // Always refresh permission status before enabling
       await refresh();
       
       if (!_hasPermissions) {
         final granted = await requestPermissions();
         if (!granted) {
-          // If still no permissions, try opening settings
           _setError('Brak uprawnień do powiadomień. Otwórz ustawienia aby je włączyć.');
           return;
         }
@@ -236,7 +216,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Set default reminder time
   Future<void> setDefaultReminderTime(int minutes) async {
     _setLoading(true);
     _clearError();
@@ -260,7 +239,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Reschedule all reminders
   Future<void> rescheduleAllReminders() async {
     _setLoading(true);
     _clearError();
@@ -284,7 +262,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Clear all notifications
   Future<void> clearAllNotifications() async {
     _setLoading(true);
     _clearError();
@@ -308,18 +285,15 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Refresh settings
   Future<void> refresh() async {
     await _loadSettings();
   }
   
-  // Clear error
   void clearError() {
     _clearError();
     notifyListeners();
   }
   
-  // Get reminder time options
   List<ReminderTimeOption> getReminderTimeOptions() {
     return [
       ReminderTimeOption(0, 'Brak przypomnienia'),
@@ -330,8 +304,7 @@ class NotificationProvider extends ChangeNotifier {
       ReminderTimeOption(1440, '1 dzień przed'),
     ];
   }
-  
-  // Get reminder time display text
+
   String getReminderTimeDisplayText(int? minutes) {
     if (minutes == null || minutes == 0) {
       return 'Brak przypomnienia';
@@ -348,7 +321,6 @@ class NotificationProvider extends ChangeNotifier {
     }
   }
   
-  // Private methods
   void _setLoading(bool loading) {
     _isLoading = loading;
     notifyListeners();

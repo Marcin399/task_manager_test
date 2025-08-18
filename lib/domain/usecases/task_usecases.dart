@@ -15,7 +15,6 @@ class TaskUseCases {
   
   TaskUseCases(this._taskRepository, this._notificationRepository);
   
-  // Create Task
   Future<Result<TaskEntity>> createTask({
     required String title,
     String? description,
@@ -47,7 +46,6 @@ class TaskUseCases {
     
     return createResult.when(
       success: (_) async {
-        // Schedule notification if reminder is set
         if (task.hasReminder) {
           await _notificationRepository.scheduleTaskReminder(task);
         }
@@ -57,17 +55,14 @@ class TaskUseCases {
     );
   }
   
-  // Get All Tasks
   Future<Result<List<TaskEntity>>> getAllTasks() async {
     return await _taskRepository.getAllTasks();
   }
   
-  // Get Tasks by Status
   Future<Result<List<TaskEntity>>> getTasksByStatus(bool isCompleted) async {
     return await _taskRepository.getTasksByStatus(isCompleted);
   }
   
-  // Get Active Tasks (sorted by deadline)
   Future<Result<List<TaskEntity>>> getActiveTasks() async {
     final result = await _taskRepository.getTasksByStatus(false);
     
@@ -78,12 +73,10 @@ class TaskUseCases {
     });
   }
   
-  // Get Completed Tasks
   Future<Result<List<TaskEntity>>> getCompletedTasks() async {
     return await _taskRepository.getTasksByStatus(true);
   }
   
-  // Update Task
   Future<Result<void>> updateTask(TaskEntity task) async {
     if (task.title.trim().isEmpty) {
       return const Result.failure(ValidationFailure('Tytuł zadania jest wymagany'));
@@ -99,7 +92,6 @@ class TaskUseCases {
     
     return updateResult.when(
       success: (_) async {
-        // Update notification
         await _notificationRepository.cancelTaskReminder(task.id);
         if (updatedTask.hasReminder && !updatedTask.isCompleted) {
           await _notificationRepository.scheduleTaskReminder(updatedTask);
@@ -110,7 +102,6 @@ class TaskUseCases {
     );
   }
   
-  // Mark Task as Completed
   Future<Result<void>> markTaskAsCompleted(String taskId) async {
     final taskResult = await _taskRepository.getTaskById(taskId);
     
@@ -129,13 +120,11 @@ class TaskUseCases {
         return updateResult;
       }
       
-      // Cancel reminder notification
       await _notificationRepository.cancelTaskReminder(taskId);
       return const Result.success(null);
     });
   }
   
-  // Mark Task as Incomplete
   Future<Result<void>> markTaskAsIncomplete(String taskId) async {
     final taskResult = await _taskRepository.getTaskById(taskId);
     
@@ -154,7 +143,6 @@ class TaskUseCases {
         return updateResult;
       }
       
-      // Reschedule reminder if task has one
       if (task.hasReminder) {
         await _notificationRepository.scheduleTaskReminder(task);
       }
@@ -162,7 +150,6 @@ class TaskUseCases {
     });
   }
   
-  // Delete Task
   Future<Result<void>> deleteTask(String taskId) async {
     final deleteResult = await _taskRepository.deleteTask(taskId);
     
@@ -176,7 +163,6 @@ class TaskUseCases {
     );
   }
   
-  // Search Tasks
   Future<Result<List<TaskEntity>>> searchTasks(String query) async {
     if (query.trim().isEmpty) {
       return const Result.success([]);
@@ -185,32 +171,26 @@ class TaskUseCases {
     return await _taskRepository.searchTasks(query.trim());
   }
   
-  // Get Overdue Tasks
   Future<Result<List<TaskEntity>>> getOverdueTasks() async {
     return await _taskRepository.getOverdueTasks();
   }
-  
-  // Get Tasks Due Today
+
   Future<Result<List<TaskEntity>>> getTasksDueToday() async {
     return await _taskRepository.getTasksDueToday();
   }
   
-  // Get Tasks Due Tomorrow
   Future<Result<List<TaskEntity>>> getTasksDueTomorrow() async {
     return await _taskRepository.getTasksDueTomorrow();
   }
   
-  // Get Tasks by Priority
   Future<Result<List<TaskEntity>>> getTasksByPriority(TaskPriority priority) async {
     return await _taskRepository.getTasksByPriority(priority);
   }
   
-  // Get Statistics
   Future<Result<TaskStatisticsEntity>> getTaskStatistics() async {
     return await _taskRepository.getTaskStatistics();
   }
   
-  // Get Productivity Trend
   Future<Result<List<ProductivityTrend>>> getProductivityTrend({
     int days = 30,
   }) async {
@@ -220,12 +200,10 @@ class TaskUseCases {
     return await _taskRepository.getProductivityTrend(startDate, endDate);
   }
   
-  // Delete Completed Tasks
   Future<Result<void>> deleteCompletedTasks() async {
     return await _taskRepository.deleteCompletedTasks();
   }
   
-  // Bulk Update Tasks
   Future<Result<void>> bulkUpdateTasks(List<TaskEntity> tasks) async {
     return await _taskRepository.bulkUpdateTasks(tasks);
   }

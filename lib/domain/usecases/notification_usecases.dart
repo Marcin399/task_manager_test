@@ -14,7 +14,6 @@ class NotificationUseCases {
   
   NotificationUseCases(this._notificationRepository, this._taskRepository);
   
-  // Initialize Notification System
   Future<Result<void>> initializeNotifications() async {
     final initResult = await _notificationRepository.initialize();
     
@@ -22,29 +21,24 @@ class NotificationUseCases {
       return initResult;
     }
     
-    // Try to request permissions, but don't fail if user denies
     final permissionResult = await _notificationRepository.requestPermissions();
     
     if (permissionResult.isFailure) {
-      // Log the error but continue initialization
       Logger.warning('Żądanie uprawnień nie powiodło się: ${permissionResult.failure}', tag: 'Notifications');
     }
     
     final hasPermissions = permissionResult.isSuccess && permissionResult.data!;
     
     if (hasPermissions) {
-      // Only reschedule if we have permissions
       final tasksResult = await _taskRepository.getTasksByStatus(false);
       if (tasksResult.isSuccess) {
         await _notificationRepository.rescheduleAllReminders(tasksResult.data!);
       }
     }
     
-    // Always return success - permissions can be granted later
     return const Result.success(null);
   }
   
-  // Check and Request Permissions
   Future<Result<bool>> checkNotificationPermissions() async {
     return await _notificationRepository.checkPermissions();
   }
@@ -57,7 +51,6 @@ class NotificationUseCases {
     return await _notificationRepository.openAppSettings();
   }
   
-  // Schedule Task Reminder
   Future<Result<void>> scheduleTaskReminder(TaskEntity task) async {
     if (task.isCompleted) {
       return const Result.failure(
@@ -81,12 +74,10 @@ class NotificationUseCases {
     return await _notificationRepository.scheduleTaskReminder(task);
   }
   
-  // Cancel Task Reminder
   Future<Result<void>> cancelTaskReminder(String taskId) async {
     return await _notificationRepository.cancelTaskReminder(taskId);
   }
   
-  // Update Task Reminder
   Future<Result<void>> updateTaskReminder(
     String taskId, 
     int? reminderMinutes
@@ -98,30 +89,25 @@ class NotificationUseCases {
         return const Result.failure(NotFoundFailure('Zadanie nie zostało znalezione'));
       }
       
-      // Cancel existing reminder
       await _notificationRepository.cancelTaskReminder(taskId);
       
       if (reminderMinutes != null) {
         final updatedTask = task.updateReminder(reminderMinutes);
         
-        // Update task in repository
         final updateResult = await _taskRepository.updateTask(updatedTask);
         
         if (updateResult.isFailure) {
           return updateResult;
         }
         
-        // Schedule new reminder
         return await _notificationRepository.scheduleTaskReminder(updatedTask);
       } else {
-        // Just remove the reminder
         final updatedTask = task.updateReminder(null);
         return await _taskRepository.updateTask(updatedTask);
       }
     });
   }
   
-  // Set Default Reminder Time
   Future<Result<void>> setDefaultReminderTime(int minutes) async {
     if (minutes < 0) {
       return const Result.failure(
@@ -132,7 +118,6 @@ class NotificationUseCases {
     return await _notificationRepository.updateDefaultReminderTime(minutes);
   }
   
-  // Get Default Reminder Time
   Future<Result<int>> getDefaultReminderTime() async {
     final result = await _notificationRepository.getDefaultReminderTime();
     
@@ -142,7 +127,6 @@ class NotificationUseCases {
     );
   }
   
-  // Enable/Disable Notifications
   Future<Result<void>> enableNotifications() async {
     final permissionResult = await _notificationRepository.checkPermissions();
     
@@ -172,16 +156,13 @@ class NotificationUseCases {
       return disableResult;
     }
     
-    // Cancel all existing reminders
     return await _notificationRepository.cancelAllReminders();
   }
   
-  // Check if notifications are enabled
   Future<Result<bool>> areNotificationsEnabled() async {
     return await _notificationRepository.areNotificationsEnabled();
   }
   
-  // Reschedule all reminders (useful after app update or settings change)
   Future<Result<void>> rescheduleAllReminders() async {
     final tasksResult = await _taskRepository.getTasksByStatus(false);
     
@@ -193,12 +174,10 @@ class NotificationUseCases {
     return await _notificationRepository.rescheduleAllReminders(tasksWithReminders);
   }
   
-  // Get pending notifications
   Future<Result<List<String>>> getPendingNotifications() async {
     return await _notificationRepository.getPendingNotifications();
   }
   
-  // Clear all notifications
   Future<Result<void>> clearAllNotifications() async {
     return await _notificationRepository.cancelAllReminders();
   }

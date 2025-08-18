@@ -12,7 +12,7 @@ class TaskStatisticsEntity with _$TaskStatisticsEntity {
     required int completedTasks,
     required int pendingTasks,
     required int overdueTasks,
-    required Map<int, int> completedTasksByDay, // day of week (1-7) -> count
+    required Map<int, int> completedTasksByDay, 
     required double completionRate,
     required int mostProductiveDayOfWeek,
   }) = _TaskStatisticsEntity;
@@ -28,7 +28,6 @@ class TaskStatisticsEntity with _$TaskStatisticsEntity {
   bool get hasCompletedTasksThisMonth => completedTasksThisMonth > 0;
   
   String get mostProductiveDayName {
-    // Map weekday values (1=Monday, 7=Sunday) to day names
     const dayNames = {
       1: 'Poniedziałek',
       2: 'Wtorek', 
